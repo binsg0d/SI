@@ -1,0 +1,185 @@
+{
+  "questions": {
+    "Q1": {
+      "text": "Jaki jest główny objaw problemu z komputerem?",
+      "answers": [
+        "brak_zasilania",
+        "brak_obrazu",
+        "niebieski_ekran_bsod",
+        "zawieszanie_sie",
+        "przegrzewanie",
+        "wolna_praca"
+      ]
+    },
+    "Q2": {
+      "text": "Kiedy najczęściej występuje problem?",
+      "answers": [
+        "od_razu_po_wlaczeniu",
+        "podczas_grania_obciazenia",
+        "losowo_w_trakcie_pracy",
+        "caly_czas"
+      ]
+    },
+    "Q3": {
+      "text": "Czy płyta główna wydaje dźwięki (beepy) lub świecą się diody diagnostyczne?",
+      "answers": [
+        "brak_sygnalow",
+        "dioda_cpu",
+        "dioda_ram",
+        "dioda_vga",
+        "dlugie_dzwieki",
+        "krotkie_dzwieki"
+      ]
+    },
+    "Q4": {
+      "text": "Czy ostatnio wymieniano lub dodawano nowe podzespoły?",
+      "answers": ["tak", "nie"]
+    },
+    "Q5": {
+      "text": "Czy komputer jest fizycznie gorący w dotyku (obudowa/powietrze)?",
+      "answers": ["tak", "nie"]
+    },
+    "Q6": {
+      "text": "Czy jesteś w stanie wejść do ustawień BIOS/UEFI?",
+      "answers": ["tak", "nie"]
+    },
+    "Q7": {
+      "text": "Czy wentylatory obracają się po wciśnięciu przycisku zasilania?",
+      "answers": ["tak", "nie"]
+    },
+    "Q8": {
+      "text": "Czy wszystkie kable (zasilanie, monitor, wewnątrz obudowy) są dociśnięte?",
+      "answers": ["tak", "nie", "nie_wiem"]
+    },
+    "Q9": {
+      "text": "Czy ostatnio aktualizowano system Windows lub sterowniki?",
+      "answers": ["tak", "nie"]
+    },
+    "Q10": {
+      "text": "Na jakim dysku zainstalowany jest system operacyjny?",
+      "answers": ["hdd", "ssd_sata", "nvme", "nie_wiem"]
+    }
+  },
+  "rules": [
+    {
+      "if": { "Q1": "brak_zasilania", "Q7": "nie", "Q8": "tak" },
+      "then": { "diagnosis": "Uszkodzony zasilacz (PSU) lub gniazdko w ścianie.", "action": "Sprawdź na innym kablu zasilającym lub wymień zasilacz." }
+    },
+    {
+      "if": { "Q1": "brak_zasilania", "Q7": "nie", "Q8": "nie" },
+      "then": { "diagnosis": "Odłączone kable zasilające.", "action": "Dociśnij kabel zasilający z tyłu obudowy oraz sprawdź listwę przepięciową." }
+    },
+    {
+      "if": { "Q1": "brak_zasilania", "Q7": "tak", "Q3": "brak_sygnalow" },
+      "then": { "diagnosis": "Płyta główna uległa awarii (martwa pomimo zasilania).", "action": "Zresetuj CMOS (bateria BIOS), jeśli nie pomoże - serwis płyty." }
+    },
+    {
+      "if": { "Q1": "brak_obrazu", "Q6": "nie", "Q3": "dioda_vga" },
+      "then": { "diagnosis": "Błąd karty graficznej lub niepodłączone zasilanie PCIe.", "action": "Wyjmij i włóż ponownie kartę graficzną oraz dociśnij kable zasilające GPU." }
+    },
+    {
+      "if": { "Q1": "brak_obrazu", "Q7": "tak", "Q4": "tak" },
+      "then": { "diagnosis": "Nowy procesor nie jest obsługiwany przez obecną wersję BIOS.", "action": "Zaktualizuj BIOS płyty głównej (użyj starszego procesora lub funkcji BIOS Flashback)." }
+    },
+    {
+      "if": { "Q1": "brak_obrazu", "Q6": "nie", "Q8": "nie" },
+      "then": { "diagnosis": "Kabel sygnałowy monitora nie jest poprawnie podłączony.", "action": "Upewnij się, że kabel monitora jest podłączony do karty graficznej, a NIE do płyty głównej." }
+    },
+    {
+      "if": { "Q1": "niebieski_ekran_bsod", "Q9": "tak", "Q6": "tak" },
+      "then": { "diagnosis": "Konflikt nowych sterowników lub wadliwa aktualizacja Windows.", "action": "Uruchom tryb awaryjny i odinstaluj ostatnie aktualizacje/sterowniki (DDU dla GPU)." }
+    },
+    {
+      "if": { "Q1": "niebieski_ekran_bsod", "Q2": "podczas_grania_obciazenia", "Q5": "tak" },
+      "then": { "diagnosis": "Przegrzewanie się procesora lub karty graficznej pod obciążeniem.", "action": "Oczyść komputer z kurzu, sprawdź działanie wentylatorów, rozważ wymianę pasty termoprzewodzącej." }
+    },
+    {
+      "if": { "Q1": "niebieski_ekran_bsod", "Q2": "losowo_w_trakcie_pracy", "Q3": "dioda_ram" },
+      "then": { "diagnosis": "Niestabilna pamięć RAM (profil XMP) lub uszkodzona kość.", "action": "Wyłącz profil XMP w BIOSie lub przetestuj kości RAM programem MemTest86 pojedynczo." }
+    },
+    {
+      "if": { "Q1": "niebieski_ekran_bsod", "Q10": "hdd", "Q2": "od_razu_po_wlaczeniu" },
+      "then": { "diagnosis": "Uszkodzony sektor rozruchowy na dysku talerzowym (HDD).", "action": "Uruchom narzędzie naprawy systemu Windows z pendrive'a i wykonaj chkdsk." }
+    },
+    {
+      "if": { "Q1": "niebieski_ekran_bsod", "Q4": "tak", "Q6": "tak" },
+      "then": { "diagnosis": "Brak kompatybilności nowego sprzętu lub brak czystej instalacji systemu.", "action": "Wykonaj czystą instalację systemu operacyjnego dla nowych podzespołów (zwłaszcza po zmianie płyty głównej)." }
+    },
+    {
+      "if": { "Q1": "zawieszanie_sie", "Q2": "losowo_w_trakcie_pracy", "Q5": "tak" },
+      "then": { "diagnosis": "Thermal throttling - system ratuje się przed spaleniem drastycznie zaniżając taktowanie.", "action": "Natychmiast wyłącz komputer, sprawdź czy chłodzenie procesora nie odpadło lub pompa AIO działa." }
+    },
+    {
+      "if": { "Q1": "zawieszanie_sie", "Q10": "hdd", "Q2": "losowo_w_trakcie_pracy" },
+      "then": { "diagnosis": "Dysk HDD kończy swoją żywotność (zacinająca się głowica).", "action": "Zrób kopię zapasową ważnych danych i wymień dysk na SSD." }
+    },
+    {
+      "if": { "Q1": "zawieszanie_sie", "Q2": "podczas_grania_obciazenia", "Q4": "tak" },
+      "then": { "diagnosis": "Zasilacz nie radzi sobie ze skokami poboru mocy nowej karty graficznej (tzw. transient spikes).", "action": "Wymień zasilacz na model o wyższej mocy i standardzie ATX 3.0." }
+    },
+    {
+      "if": { "Q1": "zawieszanie_sie", "Q9": "tak", "Q2": "caly_czas" },
+      "then": { "diagnosis": "Wyciek pamięci (memory leak) spowodowany uszkodzoną łatką oprogramowania.", "action": "Sprawdź menedżer zadań pod kątem użycia RAM, zaktualizuj aplikację powodującą problem." }
+    },
+    {
+      "if": { "Q1": "przegrzewanie", "Q2": "podczas_grania_obciazenia", "Q5": "tak" },
+      "then": { "diagnosis": "Kiepska cyrkulacja powietrza w obudowie komputera (tzw. piekarnik).", "action": "Zdejmij boczny panel obudowy. Jeśli temperatury spadną, dołóż wentylatory wyciągające powietrze." }
+    },
+    {
+      "if": { "Q1": "przegrzewanie", "Q7": "tak", "Q2": "caly_czas" },
+      "then": { "diagnosis": "Uszkodzona pompa chłodzenia wodnego (AIO) lub zatarta pasta termoprzewodząca.", "action": "Sprawdź w BIOSie, czy pompa AIO raportuje obroty. Wymień pastę i/lub chłodzenie." }
+    },
+    {
+      "if": { "Q1": "wolna_praca", "Q10": "hdd", "Q2": "caly_czas" },
+      "then": { "diagnosis": "Windows 10/11 nie jest zoptymalizowany pod dyski HDD.", "action": "Przenieś system operacyjny (klonowanie lub nowa instalacja) na dysk SSD SATA lub NVMe." }
+    },
+    {
+      "if": { "Q1": "wolna_praca", "Q9": "tak", "Q2": "od_razu_po_wlaczeniu" },
+      "then": { "diagnosis": "System pobiera i instaluje duże aktualizacje w tle.", "action": "Pozostaw włączony komputer na kilka godzin, aby zakończył indeksowanie i aktualizacje." }
+    },
+    {
+      "if": { "Q1": "wolna_praca", "Q10": "ssd_sata", "Q2": "caly_czas" },
+      "then": { "diagnosis": "Dysk SSD jest zapełniony powyżej 90%, przez co traci wydajność.", "action": "Zwolnij co najmniej 15-20% miejsca na dysku C: usuwając zbędne pliki." }
+    },
+    {
+      "if": { "Q1": "brak_obrazu", "Q3": "dlugie_dzwieki", "Q4": "tak" },
+      "then": { "diagnosis": "Błąd pamięci RAM po instalacji nowych kości.", "action": "Wyjmij RAM, przedmuchaj sloty i zamontuj ponownie upewniając się, że zatrzaski kliknęły (najlepiej w slotach 2 i 4)." }
+    },
+    {
+      "if": { "Q1": "brak_zasilania", "Q3": "dioda_cpu", "Q4": "tak" },
+      "then": { "diagnosis": "Wygięte piny w gnieździe procesora na płycie głównej podczas montażu.", "action": "Delikatnie wymontuj procesor i użyj szkła powiększającego, by sprawdzić gniazdo LGA." }
+    },
+    {
+      "if": { "Q1": "zawieszanie_sie", "Q3": "dioda_ram", "Q2": "losowo_w_trakcie_pracy" },
+      "then": { "diagnosis": "Niestabilność kontrolera pamięci w procesorze lub uszkodzony moduł RAM.", "action": "Obniż taktowanie pamięci RAM w BIOS (wyłącz XMP/EXPO) i sprawdź stabilność." }
+    },
+    {
+      "if": { "Q1": "niebieski_ekran_bsod", "Q3": "krotkie_dzwieki", "Q6": "nie" },
+      "then": { "diagnosis": "Krytyczny błąd sprzętowy komponentu na płycie głównej (np. kontroler USB/SATA).", "action": "Odłącz wszystkie urządzenia peryferyjne i dyski poza systemowym, spróbuj uruchomić ponownie." }
+    },
+    {
+      "if": { "Q1": "brak_obrazu", "Q2": "od_razu_po_wlaczeniu", "Q8": "nie_wiem" },
+      "then": { "diagnosis": "Wypięty kabel zasilania monitora lub luźny kabel sygnałowy.", "action": "Zamiast zgadywać, manualnie sprawdź kable po stronie monitora i karty graficznej." }
+    },
+    {
+      "if": { "Q6": "tak", "Q1": "niebieski_ekran_bsod", "Q10": "nvme" },
+      "then": { "diagnosis": "Przegrzewanie się dysku NVMe (Błąd WHEA) i gubienie połączenia z PCIe.", "action": "Zamontuj radiator na dysku M.2 NVMe lub przenieś go do gniazda dalej od karty graficznej." }
+    },
+    {
+      "if": { "Q2": "od_razu_po_wlaczeniu", "Q6": "nie", "Q3": "dioda_vga" },
+      "then": { "diagnosis": "Monitor wybudza się zbyt wolno, a płyta główna zgłasza błąd braku ekranu.", "action": "Najpierw włącz monitor, poczekaj 3 sekundy i dopiero włącz komputer. Możesz też zaktualizować firmware GPU." }
+    },
+    {
+      "if": { "Q1": "wolna_praca", "Q5": "tak", "Q2": "podczas_grania_obciazenia" },
+      "then": { "diagnosis": "Drastyczny spadek taktowania CPU/GPU (throttling) z powodu braku chłodzenia.", "action": "Odkurz radiatory, upewnij się, że wentylatory na GPU w ogóle się kręcą (np. przy użyciu MSI Afterburner)." }
+    },
+    {
+      "if": { "Q1": "przegrzewanie", "Q10": "hdd", "Q9": "tak" },
+      "then": { "diagnosis": "Indeksowanie plików Windows Search obciąża powolny dysk HDD w 100%, generując ciepło i hałas dysku.", "action": "Wyłącz usługę Windows Search (Wyszukiwanie systemu Windows) w services.msc." }
+    },
+    {
+      "if": { "Q4": "tak", "Q7": "tak", "Q3": "krotkie_dzwieki" },
+      "then": { "diagnosis": "Nowa część (często USB lub złącze front panelu) powoduje zwarcie.", "action": "Odepnij kable front panelu (USB/Audio) od płyty głównej i sprawdź czy komputer włączy się normalnie." }
+    }
+  ]
+}
