@@ -1,102 +1,90 @@
 import random
 
-# --- DANE WEJŚCIOWE PROBLEMU ---
-# Lista przedmiotów: (Nazwa, Waga, Wartość)
 ITEMS = [
     ("Laptop", 3.0, 2000),
     ("Namiot", 4.0, 1000),
     ("Kamera", 1.0, 1500),
     ("Apteczka", 0.5, 300),
-    ("Buty górskie", 1.5, 500),
-    ("Zapas jedzenia", 2.0, 600),
+    ("Buty", 1.5, 500),
+    ("Jedzenie", 2.0, 600),
     ("Latarka", 0.3, 150),
     ("Powerbank", 0.7, 250),
     ("Kurtka", 1.0, 400),
-    ("Scyzoryk", 0.2, 200)
+    ("Scyzoryk", 0.2, 200),
+    ("Woda", 2.0, 100),
+    ("Mapa", 0.1, 50),
+    ("Książka", 0.5, 300),
+    ("Czapka", 0.2, 100),
+    ("Rękawiczki", 0.3, 150),
 ]
-KNAPSACK_CAPACITY = 7.0   # Maksymalny udźwig plecaka
 
-# --- PARAMETRY ALGORYTMU GENETYCZNEGO ---
-POP_SIZE = 50             # Rozmiar populacji
-MAX_ITER = 200            # Limit iteracji
-CROSSOVER_RATE = 0.8      # Prawdopodobieństwo krzyżowania
-MUTATION_RATE = 0.1       # Prawdopodobieństwo mutacji pojedynczego genu
+N = len(ITEMS)
+CAPACITY = 6.0
+MAX_TOTAL_VALUE = sum(value for _, _, value in ITEMS)
 
-# --- FUNKCJE POMOCNICZE ---
+POP_SIZE = 100
+MAX_ITER = 1000
+CROSSOVER_RATIO = 0.80
+MUTATION_RATIO = 0.20
 
-def create_individual():
-    """Tworzy losowego osobnika (wektor 0 i 1)."""
-    return [random.choice([0, 1]) for _ in range(len(ITEMS))]
 
 def fitness(individual):
-    """Zwraca łączną wartość przedmiotów, jeśli waga mieści się w plecaku. Inaczej 0."""
-    total_weight = 0
-    total_value = 0
-    
-    for i, is_selected in enumerate(individual):
-        if is_selected:
-            total_weight += ITEMS[i][1]
-            total_value += ITEMS[i][2]
-            
-    # Jeżeli waga przekracza pojemność, osobnik jest 'martwy' (wartość 0)
-    if total_weight > KNAPSACK_CAPACITY:
-        return 0
-    return total_value
+    weight = sum(items[1] * gene for items, gene in zip(ITEMS, individual))
+    value = sum(items[2] * gene for items, gene in zip(ITEMS, individual))
 
-def print_solution(individual):
-    """Wypisuje spakowane przedmioty i ich parametry."""
-    total_w = 0
-    total_v = 0
-    print("Spakowane przedmioty:")
-    for i, is_selected in enumerate(individual):
-        if is_selected:
-            name, weight, value = ITEMS[i]
-            print(f" - {name} (Waga: {weight}, Wartość: {value})")
-            total_w += weight
-            total_v += value
-    print(f"\nŁączna waga: {total_w} / {KNAPSACK_CAPACITY}")
-    print(f"Łączna wartość: {total_v}")
+    if weight > CAPACITY:
+        return 999_999 + weight
 
-# --- GŁÓWNA PĘTLA ALGORYTMU ---
+    return MAX_TOTAL_VALUE - value
 
-def genetic_algorithm():
-    # 1. Inicjalizacja populacji
-    population = [create_individual() for _ in range(POP_SIZE)]
-    
-    for iteration in range(MAX_ITER):
-        # 2. Ocena i sortowanie (tym razem malejąco, bo szukamy maksimum wartości)
-        population.sort(key=fitness, reverse=True)
-        
-        # 3. Selekcja i rozród (tworzymy nowe pokolenie)
-        children = []
-        num_crossovers = int((CROSSOVER_RATE * POP_SIZE) / 2)
-        
-        for _ in range(num_crossovers):
-            # Wybieramy rodziców z lepszej połowy populacji (selekcja turniejowa uproszczona)
-            parent1 = random.choice(population[:POP_SIZE//2])
-            parent2 = random.choice(population[:POP_SIZE//2])
-            
-            # Krzyżowanie jednopunktowe
-            cross_point = random.randint(1, len(ITEMS) - 1)
-            child1 = parent1[:cross_point] + parent2[cross_point:]
-            child2 = parent2[:cross_point] + parent1[cross_point:]
-            children.extend([child1, child2])
-            
-        population.extend(children)
-        
-        # 4. Mutacja (Bit-flip - zamiana 0 na 1 lub 1 na 0)
-        for i in range(len(population)):
-            for j in range(len(ITEMS)):
-                if random.random() < MUTATION_RATE:
-                    population[i][j] = 1 - population[i][j] # Odwrócenie bitu
-                    
-        # 5. Odcięcie najsłabszych osobników (przywrócenie rozmiaru POP_SIZE)
-        population.sort(key=fitness, reverse=True)
-        population = population[:POP_SIZE]
 
-    # Zwracamy najlepszego osobnika z ostatniej iteracji
-    return population[0]
+def generate_population(size):
+    return [[random.randint(0, 1) for _ in range(N)] for _ in range(size)]
 
-# --- URUCHOMIENIE ---
-best_individual = genetic_algorithm()
-print_solution(best_individual)
+
+def crossover(parent_a, parent_b):
+    cut = random.randint(1, N - 1)
+    child_a = parent_a[:cut] + parent_b[cut:]
+    child_b = parent_b[:cut] + parent_a[cut:]
+    return child_a, child_b
+
+
+def mutate(individual):
+    mutated = individual.copy()
+    idx = random.randint(0, N - 1)
+    mutated[idx] = random.randint(0, 1)
+    return mutated
+
+
+population = generate_population(POP_SIZE)
+
+for _ in range(MAX_ITER):
+    new_generation = []
+
+    for _ in range(int(POP_SIZE * CROSSOVER_RATIO / 2)):
+        parent_a, parent_b = random.sample(population, 2)
+        new_generation.extend(crossover(parent_a, parent_b))
+
+    for _ in range(int(POP_SIZE * MUTATION_RATIO)):
+        new_generation.append(mutate(random.choice(population)))
+
+    population.extend(new_generation)
+    population.sort(key=fitness)
+    population = population[:POP_SIZE]
+
+    if fitness(population[0]) == 0:
+        break
+
+best = population[0]
+final_weight = sum(item[1] * gene for item, gene in zip(ITEMS, best))
+final_value = sum(item[2] * gene for item, gene in zip(ITEMS, best))
+
+print(f"Algorytm zakończył po {MAX_ITER} iteracjach.")
+print(f"Najlepszy wektor: {best}")
+print(f"Waga: {final_weight} / {CAPACITY}")
+print(f"Wartość: {final_value}")
+print("Spakowane przedmioty:")
+
+for index, (_, weight, value) in enumerate(ITEMS):
+    if best[index]:
+        print(f" - {ITEMS[index][0]} (waga: {weight}, wartość: {value})")
