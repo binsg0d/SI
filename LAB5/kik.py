@@ -6,6 +6,8 @@ class TicTacToeGUI:
     def __init__(self, root):
         self.root = root
         self.root.title("Kółko i Krzyżyk – Minimax")
+        self.root.minsize(320, 420)
+        self.root.bind("<Configure>", self.on_window_resize)
 
         # Górny pasek ustawień
         ctrl = tk.Frame(root, padx=10, pady=8)
@@ -35,16 +37,23 @@ class TicTacToeGUI:
         )
 
         tk.Button(ctrl, text="Nowa gra", command=self.new_game).pack(side=tk.LEFT)
+        tk.Button(ctrl, text="Resetuj", command=self.reset_game).pack(side=tk.LEFT)
 
         self.status = tk.Label(root, text="", font=("Arial", 11, "bold"), pady=4)
         self.status.pack()
 
         self.board_frame = tk.Frame(root, padx=10, pady=10)
-        self.board_frame.pack()
+        self.board_frame.pack(fill=tk.BOTH, expand=True)
 
+        self.ai_after_id = None
         self.new_game()
+        self.root.after_idle(self.on_window_resize)
 
     def new_game(self):
+        if self.ai_after_id is not None:
+            self.root.after_cancel(self.ai_after_id)
+            self.ai_after_id = None
+
         self.N = max(3, self.size_var.get())
         self.max_depth = max(1, self.depth_var.get())
         user_starts = self.starter_var.get() == "Użytkownik"
@@ -57,7 +66,6 @@ class TicTacToeGUI:
             widget.destroy()
 
         self.buttons = []
-        font_size = max(14, 28 - self.N * 2)
         for r in range(self.N):
             row_btns = []
             for c in range(self.N):
@@ -66,18 +74,47 @@ class TicTacToeGUI:
                     text="",
                     width=4,
                     height=2,
-                    font=("Arial", font_size, "bold"),
+                    font=("Arial", 16, "bold"),
                     command=lambda r=r, c=c: self.on_click(r, c),
                 )
-                btn.grid(row=r, column=c, padx=2, pady=2)
+                btn.grid(row=r, column=c, padx=2, pady=2, sticky="nsew")
                 row_btns.append(btn)
             self.buttons.append(row_btns)
+
+        for i in range(self.N):
+            self.board_frame.grid_columnconfigure(i, weight=1)
+            self.board_frame.grid_rowconfigure(i, weight=1)
 
         if user_starts:
             self.status.config(text=f"Twój ruch ({self.HUMAN})")
         else:
             self.status.config(text="Komputer myśli...")
-            self.root.after(100, self.ai_move)
+            self.ai_after_id = self.root.after(100, self.ai_move)
+
+        self.root.after_idle(self.on_window_resize)
+
+    def on_window_resize(self, event=None):
+        if not hasattr(self, "buttons") or not self.buttons:
+            return
+
+        n = self.N
+        frame_w = max(self.board_frame.winfo_width(), 200)
+        frame_h = max(self.board_frame.winfo_height(), 200)
+
+        cell = max(32, min((frame_w - 20) // n, (frame_h - 20) // n))
+        font_size = max(12, min(32, int(cell * 0.45)))
+
+        for r in range(n):
+            for c in range(n):
+                btn = self.buttons[r][c]
+                btn.config(
+                    width=max(2, cell // 12),
+                    height=max(1, cell // 22),
+                    font=("Arial", font_size, "bold"),
+                )
+
+    def reset_game(self):
+        self.new_game()
 
     def on_click(self, r, c):
         if self.game_over or self.board[r][c] != "":
@@ -85,9 +122,12 @@ class TicTacToeGUI:
         self.make_move(r, c, self.HUMAN)
         if not self.game_over:
             self.status.config(text="Komputer myśli...")
-            self.root.after(50, self.ai_move)
+            if self.ai_after_id is not None:
+                self.root.after_cancel(self.ai_after_id)
+            self.ai_after_id = self.root.after(50, self.ai_move)
 
     def ai_move(self):
+        self.ai_after_id = None
         if self.game_over:
             return
         _, move = self.minimax(self.board, 0, True)
